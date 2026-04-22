@@ -1,0 +1,127 @@
+[
+  {
+    "timestamp": "2026-04-22T12:40:13.112065",
+    "skull_stripping": {
+      "parameters": {
+        "f": 0.5,
+        "g": 0
+      },
+      "processed": [],
+      "skipped": [
+        "sub-08_T1w.nii",
+        "sub-73_T1w.nii",
+        "sub-01_T1w.nii",
+        "sub-10_T1w.nii",
+        "sub-09_T1w.nii",
+        "sub-02_T1w.nii",
+        "sub-03_T1w.nii",
+        "sub-06_T1w.nii",
+        "sub-74_T1w.nii",
+        "sub-07_T1w.nii",
+        "sub-75_T1w.nii",
+        "sub-77_T1w.nii",
+        "sub-05_T1w.nii",
+        "sub-76_T1w.nii",
+        "sub-04_T1w.nii"
+      ]
+    },
+    "slice_extraction": {
+      "empty_slice_threshold": 10,
+      "normalization": "min-max to 0-255",
+      "processed": [],
+      "skipped": [
+        "sub-01_T1w_brain.nii.gz",
+        "sub-02_T1w_brain.nii.gz",
+        "sub-03_T1w_brain.nii.gz",
+        "sub-04_T1w_brain.nii.gz",
+        "sub-05_T1w_brain.nii.gz",
+        "sub-06_T1w_brain.nii.gz",
+        "sub-07_T1w_brain.nii.gz",
+        "sub-08_T1w_brain.nii.gz",
+        "sub-09_T1w_brain.nii.gz",
+        "sub-10_T1w_brain.nii.gz",
+        "sub-73_T1w_brain.nii.gz",
+        "sub-74_T1w_brain.nii.gz",
+        "sub-75_T1w_brain.nii.gz",
+        "sub-76_T1w_brain.nii.gz",
+        "sub-77_T1w_brain.nii.gz"
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-04-22T12:45:50.035802",
+    "skull_stripping": {
+      "parameters": {
+        "f": 0.5,
+        "g": 0
+      },
+      "processed": [
+        "sub-72_T1w.nii",
+        "sub-70_T1w.nii",
+        "sub-69_T1w.nii",
+        "sub-68_T1w.nii",
+        "sub-71_T1w.nii"
+      ],
+      "skipped": [
+        "sub-08_T1w.nii",
+        "sub-73_T1w.nii",
+        "sub-01_T1w.nii",
+        "sub-10_T1w.nii",
+        "sub-09_T1w.nii",
+        "sub-02_T1w.nii",
+        "sub-03_T1w.nii",
+        "sub-06_T1w.nii",
+        "sub-74_T1w.nii",
+        "sub-07_T1w.nii",
+        "sub-75_T1w.nii",
+        "sub-77_T1w.nii",
+        "sub-05_T1w.nii",
+        "sub-76_T1w.nii",
+        "sub-04_T1w.nii"
+      ]
+    },
+    "slice_extraction": {
+      "empty_slice_threshold": 10,
+      "normalization": "min-max to 0-255",
+      "processed": [
+        {
+          "file": "sub-68_T1w_brain.nii.gz",
+          "slices_saved": 127
+        },
+        {
+          "file": "sub-69_T1w_brain.nii.gz",
+          "slices_saved": 127
+        },
+        {
+          "file": "sub-70_T1w_brain.nii.gz",
+          "slices_saved": 131
+        },
+        {
+          "file": "sub-71_T1w_brain.nii.gz",
+          "slices_saved": 125
+        },
+        {
+          "file": "sub-72_T1w_brain.nii.gz",
+          "slices_saved": 124
+        }
+      ],
+      "skipped": [
+        "sub-01_T1w_brain.nii.gz",
+        "sub-02_T1w_brain.nii.gz",
+        "sub-03_T1w_brain.nii.gz",
+        "sub-04_T1w_brain.nii.gz",
+        "sub-05_T1w_brain.nii.gz",
+        "sub-06_T1w_brain.nii.gz",
+        "sub-07_T1w_brain.nii.gz",
+        "sub-08_T1w_brain.nii.gz",
+        "sub-09_T1w_brain.nii.gz",
+        "sub-10_T1w_brain.nii.gz",
+        "sub-73_T1w_brain.nii.gz",
+        "sub-74_T1w_brain.nii.gz",
+        "sub-75_T1w_brain.nii.gz",
+        "sub-76_T1w_brain.nii.gz",
+        "sub-77_T1w_brain.nii.gz"
+      ]
+    }
+  }
+]
