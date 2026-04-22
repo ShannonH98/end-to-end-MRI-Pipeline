@@ -3,7 +3,12 @@ import numpy as np
 import os
 from PIL import Image
 
+#checks if image already processed
 def extract_slices(nifti_path, output_folder):
+    if os.path.exists(output_folder) and len(os.listdir(output_folder)) > 0:
+        print(f"Skipping {os.path.basename(nifti_path)} — slices already extracted")
+        return
+
     os.makedirs(output_folder, exist_ok=True)
 
     img = nib.load(nifti_path)
