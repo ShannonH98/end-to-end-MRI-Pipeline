@@ -5,7 +5,7 @@ def skull_strip(input_path, output_path):
     subprocess.run(["bet", input_path, output_path, "-f", "0.5", "-g", "0"], check=True)
     print(f"Done: {os.path.basename(output_path)}")
 
-def preprocess_folder(input_folder, output_folder):
+def preprocess_folder(input_folder, output_folder, log=None):
     os.makedirs(output_folder, exist_ok=True)
 
     for filename in os.listdir(input_folder):
@@ -16,7 +16,11 @@ def preprocess_folder(input_folder, output_folder):
 
             if os.path.exists(out_path):
                 print(f"Skipping {filename} — already processed")
+                if log is not None:
+                    log["skipped"].append(filename)
                 continue
 
             print(f"Processing: {filename}")
             skull_strip(in_path, out_path)
+            if log is not None:
+                log["processed"].append(filename)

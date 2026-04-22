@@ -4,9 +4,11 @@ import os
 from PIL import Image
 
 #checks if image already processed
-def extract_slices(nifti_path, output_folder):
+def extract_slices(nifti_path, output_folder, log=None):
     if os.path.exists(output_folder) and len(os.listdir(output_folder)) > 0:
         print(f"Skipping {os.path.basename(nifti_path)} — slices already extracted")
+        if log is not None:
+            log["skipped"].append(os.path.basename(nifti_path))
         return
 
     os.makedirs(output_folder, exist_ok=True)
@@ -18,11 +20,9 @@ def extract_slices(nifti_path, output_folder):
     for i in range(volume.shape[2]):
         slice_i = volume[:, :, i]
 
-        # Skip empty slices
         if np.mean(slice_i) < 10:
             continue
 
-        # Normalize to 0-255
         slice_i = (slice_i - np.min(slice_i)) / (np.max(slice_i) - np.min(slice_i))
         slice_i = (slice_i * 255).astype(np.uint8)
 
@@ -31,3 +31,5 @@ def extract_slices(nifti_path, output_folder):
         saved += 1
 
     print(f"Saved {saved} slices → {output_folder}")
+    if log is not None:
+        log["processed"].append({"file": os.path.basename(nifti_path), "slices_saved": saved})
