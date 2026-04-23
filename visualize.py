@@ -62,9 +62,9 @@ def plot_confusion_matrix(history):
 
 # --- 4. Sample Brain Slices ---
 def plot_sample_slices():
-    fig, axes = plt.subplots(2, 5, figsize=(15, 6))
-    classes = ["sub-01_T1w", "sub-73_T1w"]
-    labels = ["HC", "AVH+"]
+    fig, axes = plt.subplots(3, 5, figsize=(15, 9))
+    classes = ["sub-01_T1w", "sub-26_T1w", "sub-73_T1w" ]
+    labels = ["HC", "AVH-", "AVH+"]
 
     for row, (subject, label) in enumerate(zip(classes, labels)):
         folder = os.path.join(SLICES, subject)
@@ -75,7 +75,7 @@ def plot_sample_slices():
             axes[row][col].axis("off")
             axes[row][col].set_title(f"{label}\n{fname}", fontsize=7)
 
-    plt.suptitle("Sample Brain Slices — HC vs AVH+")
+    plt.suptitle("Sample Brain Slices — HC vs AVH- vs AVH+")
     plt.tight_layout()
     plt.savefig("models/sample_slices.png")
     plt.show()
