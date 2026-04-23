@@ -2,7 +2,7 @@ import csv
 
 def load_labels(tsv_path):
     labels = {}
-    label_map = {"HC": 0, "AVH+": 1}
+    label_map = {"HC": 0, "AVH-": 1, "AVH+": 2}
 
     with open(tsv_path) as f:
         reader = csv.DictReader(f, delimiter='\t')

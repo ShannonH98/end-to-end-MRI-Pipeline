@@ -15,7 +15,7 @@ SLICES = "data/slices"
 TSV = "data/participants.tsv"
 HISTORY = "models/history.json"
 MODEL = "models/brain_cnn.pth"
-CLASS_NAMES = ["HC", "AVH+"]
+CLASS_NAMES = ["HC", "AVH-", "AVH+"]
 
 # Load metrics
 with open(HISTORY) as f:

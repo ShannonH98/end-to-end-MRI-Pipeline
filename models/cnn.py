@@ -23,7 +23,7 @@ class BrainCNN(nn.Module):
             nn.Linear(64 * 16 * 16, 128),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(128, 2)
+            nn.Linear(128, 3)
         )
 
     def forward(self, x):
