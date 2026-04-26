@@ -8,6 +8,7 @@ from torchvision.models import resnet18
 import torchvision.transforms as transforms
 from PIL import Image
 from collections import defaultdict, Counter
+from sklearn.metrics import classification_report
 import csv
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -132,3 +133,5 @@ if __name__ == "__main__":
 
     print("\nModel saved → models/brain_resnet.pth")
     print("Metrics saved → models/resnet_history.json")
+    print("\nPer-class report (subject-level):")
+    print(classification_report(all_labels, all_preds, target_names=["HC", "AVH-", "AVH+"]))
