@@ -1,0 +1,195 @@
+[
+  {
+    "timestamp": "2026-04-25T21:57:30.883000",
+    "augmentation": {
+      "techniques": [
+        "horizontal_flip",
+        "rotation_10deg",
+        "brightness_1.2x"
+      ],
+      "augmented": [
+        {
+          "subject": "sub-01_T1w",
+          "new_slices": 378
+        },
+        {
+          "subject": "sub-02_T1w",
+          "new_slices": 393
+        },
+        {
+          "subject": "sub-03_T1w",
+          "new_slices": 405
+        },
+        {
+          "subject": "sub-04_T1w",
+          "new_slices": 375
+        },
+        {
+          "subject": "sub-05_T1w",
+          "new_slices": 366
+        },
+        {
+          "subject": "sub-06_T1w",
+          "new_slices": 378
+        },
+        {
+          "subject": "sub-07_T1w",
+          "new_slices": 390
+        },
+        {
+          "subject": "sub-08_T1w",
+          "new_slices": 408
+        },
+        {
+          "subject": "sub-09_T1w",
+          "new_slices": 372
+        },
+        {
+          "subject": "sub-10_T1w",
+          "new_slices": 375
+        },
+        {
+          "subject": "sub-11_T1w",
+          "new_slices": 366
+        },
+        {
+          "subject": "sub-12_T1w",
+          "new_slices": 375
+        },
+        {
+          "subject": "sub-13_T1w",
+          "new_slices": 378
+        },
+        {
+          "subject": "sub-14_T1w",
+          "new_slices": 387
+        },
+        {
+          "subject": "sub-15_T1w",
+          "new_slices": 393
+        },
+        {
+          "subject": "sub-26_T1w",
+          "new_slices": 375
+        },
+        {
+          "subject": "sub-27_T1w",
+          "new_slices": 393
+        },
+        {
+          "subject": "sub-28_T1w",
+          "new_slices": 366
+        },
+        {
+          "subject": "sub-29_T1w",
+          "new_slices": 363
+        },
+        {
+          "subject": "sub-30_T1w",
+          "new_slices": 360
+        },
+        {
+          "subject": "sub-32_T1w",
+          "new_slices": 372
+        },
+        {
+          "subject": "sub-33_T1w",
+          "new_slices": 357
+        },
+        {
+          "subject": "sub-34_T1w",
+          "new_slices": 387
+        },
+        {
+          "subject": "sub-36_T1w",
+          "new_slices": 363
+        },
+        {
+          "subject": "sub-37_T1w",
+          "new_slices": 390
+        },
+        {
+          "subject": "sub-38_T1w",
+          "new_slices": 378
+        },
+        {
+          "subject": "sub-40_T1w",
+          "new_slices": 414
+        },
+        {
+          "subject": "sub-42_T1w",
+          "new_slices": 387
+        },
+        {
+          "subject": "sub-43_T1w",
+          "new_slices": 390
+        },
+        {
+          "subject": "sub-44_T1w",
+          "new_slices": 354
+        },
+        {
+          "subject": "sub-63_T1w",
+          "new_slices": 384
+        },
+        {
+          "subject": "sub-64_T1w",
+          "new_slices": 387
+        },
+        {
+          "subject": "sub-65_T1w",
+          "new_slices": 390
+        },
+        {
+          "subject": "sub-66_T1w",
+          "new_slices": 369
+        },
+        {
+          "subject": "sub-67_T1w",
+          "new_slices": 387
+        },
+        {
+          "subject": "sub-68_T1w",
+          "new_slices": 381
+        },
+        {
+          "subject": "sub-69_T1w",
+          "new_slices": 381
+        },
+        {
+          "subject": "sub-70_T1w",
+          "new_slices": 393
+        },
+        {
+          "subject": "sub-71_T1w",
+          "new_slices": 375
+        },
+        {
+          "subject": "sub-72_T1w",
+          "new_slices": 372
+        },
+        {
+          "subject": "sub-73_T1w",
+          "new_slices": 363
+        },
+        {
+          "subject": "sub-74_T1w",
+          "new_slices": 387
+        },
+        {
+          "subject": "sub-75_T1w",
+          "new_slices": 396
+        },
+        {
+          "subject": "sub-76_T1w",
+          "new_slices": 372
+        },
+        {
+          "subject": "sub-77_T1w",
+          "new_slices": 396
+        }
+      ],
+      "skipped": []
+    }
+  }
+]

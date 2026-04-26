@@ -88,7 +88,7 @@ def plot_gradcam():
     model.eval()
 
     dataset = BrainSliceDataset(SLICES, TSV)
-    img, label = dataset[len(dataset) // 2]
+    img, label, _ = dataset[len(dataset) // 2]
     input_tensor = img.unsqueeze(0).requires_grad_(True)
 
     # Forward pass
@@ -104,8 +104,8 @@ def plot_gradcam():
         grads = grad_output[0]
 
     # Hook into last conv layer
-    handle_f = model.conv[-1].register_forward_hook(forward_hook)
-    handle_b = model.conv[-1].register_full_backward_hook(backward_hook)
+    handle_f = model.conv[-3].register_forward_hook(forward_hook)
+    handle_b = model.conv[-3].register_full_backward_hook(backward_hook)
 
     output = model(input_tensor)
     pred_class = output.argmax(dim=1).item()
@@ -119,7 +119,8 @@ def plot_gradcam():
     cam = (weights * features).sum(dim=1).squeeze()
     cam = F.relu(cam)
     cam = cam.detach().numpy()
-    cam = (cam - cam.min()) / (cam.max() - cam.min())
+    cam_range = cam.max() - cam.min()
+    cam = (cam - cam.min()) / (cam_range if cam_range > 0 else 1e-8)
 
     # Original image
     orig = img.squeeze().numpy()

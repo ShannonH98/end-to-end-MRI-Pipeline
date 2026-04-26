@@ -10,9 +10,9 @@ import json
 # Config
 SLICES = "data/slices"
 TSV = "data/participants.tsv"
-EPOCHS = 10
+EPOCHS = 20
 BATCH_SIZE = 32
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 
 # Dataset
 dataset = BrainSliceDataset(SLICES, TSV)
@@ -44,7 +44,7 @@ for epoch in range(EPOCHS):
     model.train()
     total_loss = 0
 
-    for images, labels in train_loader:
+    for images, labels, _ in train_loader:
         optimizer.zero_grad()
         outputs = model(images)
         loss = criterion(outputs, labels)
