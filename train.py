@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from preprocessing.dataset import BrainSliceDataset
 from models.cnn import BrainCNN
+from collections import defaultdict, Counter
 import json
 
 # Config
@@ -46,24 +47,24 @@ for epoch in range(EPOCHS):
 
     # Validation
     model.eval()
-    correct = 0
-    total = 0
-    all_preds = []
-    all_labels = []
+    subject_preds = defaultdict(list)
+    subject_labels = {}
 
     with torch.no_grad():
-        for images, labels in val_loader:
+        for images, labels, subject_ids in val_loader:
             outputs = model(images)
             _, predicted = torch.max(outputs, 1)
-            correct += (predicted == labels).sum().item()
-            total += labels.size(0)
-            all_preds.extend(predicted.tolist())
-            all_labels.extend(labels.tolist())
+            for sid, pred, lbl in zip(subject_ids, predicted.tolist(), labels.tolist()):
+                subject_preds[sid].append(pred)
+                subject_labels[sid] = lbl
 
-    acc = 100 * correct / total
+    all_labels = list(subject_labels.values())
+    all_preds = [Counter(subject_preds[sid]).most_common(1)[0][0] for sid in subject_labels]
+    acc = 100 * sum(p == l for p, l in zip(all_preds, all_labels)) / len(all_labels)
+
     history["loss"].append(total_loss)
     history["val_accuracy"].append(acc)
-    print(f"Epoch {epoch+1}/{EPOCHS} | Loss: {total_loss:.4f} | Val Accuracy: {acc:.2f}%")
+    print(f"Epoch {epoch+1}/{EPOCHS} | Loss: {total_loss:.4f} | Subject Accuracy: {acc:.2f}%")
 
 # Save final epoch predictions for confusion matrix
 history["val_labels"] = all_labels

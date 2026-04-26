@@ -32,7 +32,8 @@ class BrainSliceDataset(Dataset):
                 if slice_file.endswith(".png"):
                     self.samples.append((
                         os.path.join(subject_path, slice_file),
-                        label
+                        label,
+                        pid
                     ))
 
         print(f"Dataset ready: {len(self.samples)} slices")
@@ -41,7 +42,7 @@ class BrainSliceDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        path, label = self.samples[idx]
+        path, label, subject_id = self.samples[idx]
         img = Image.open(path).convert("L")
         img = self.transform(img)
-        return img, label
+        return img, label, subject_id
