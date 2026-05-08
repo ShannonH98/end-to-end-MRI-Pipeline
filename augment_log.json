@@ -191,5 +191,63 @@
       ],
       "skipped": []
     }
+  },
+  {
+    "timestamp": "2026-05-06T15:18:20.636444",
+    "augmentation": {
+      "techniques": [
+        "horizontal_flip",
+        "rotation_10deg",
+        "brightness_1.2x"
+      ],
+      "augmented": [],
+      "skipped": [
+        "sub-01_T1w",
+        "sub-02_T1w",
+        "sub-03_T1w",
+        "sub-04_T1w",
+        "sub-05_T1w",
+        "sub-06_T1w",
+        "sub-07_T1w",
+        "sub-08_T1w",
+        "sub-09_T1w",
+        "sub-10_T1w",
+        "sub-11_T1w",
+        "sub-12_T1w",
+        "sub-13_T1w",
+        "sub-14_T1w",
+        "sub-15_T1w",
+        "sub-26_T1w",
+        "sub-27_T1w",
+        "sub-28_T1w",
+        "sub-29_T1w",
+        "sub-30_T1w",
+        "sub-32_T1w",
+        "sub-33_T1w",
+        "sub-34_T1w",
+        "sub-36_T1w",
+        "sub-37_T1w",
+        "sub-38_T1w",
+        "sub-40_T1w",
+        "sub-42_T1w",
+        "sub-43_T1w",
+        "sub-44_T1w",
+        "sub-63_T1w",
+        "sub-64_T1w",
+        "sub-65_T1w",
+        "sub-66_T1w",
+        "sub-67_T1w",
+        "sub-68_T1w",
+        "sub-69_T1w",
+        "sub-70_T1w",
+        "sub-71_T1w",
+        "sub-72_T1w",
+        "sub-73_T1w",
+        "sub-74_T1w",
+        "sub-75_T1w",
+        "sub-76_T1w",
+        "sub-77_T1w"
+      ]
+    }
   }
 ]

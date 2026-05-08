@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 from preprocessing.label_map import load_labels
 
 class BrainSliceDataset(Dataset):
-    def __init__(self, slices_folder, tsv_path):
+    def __init__(self, slices_folder, tsv_path, subject_ids=None, include_augmented=True):
         self.samples = []
         self.transform = transforms.Compose([
             transforms.Resize((128, 128)),
@@ -19,17 +19,21 @@ class BrainSliceDataset(Dataset):
             if not os.path.isdir(subject_path):
                 continue
 
-            # Extract participant ID from folder name e.g. sub-01
             pid = "sub-" + subject.split("-")[1].split("_")[0]
 
             if pid not in labels:
                 print(f"Skipping {subject} — not in participants.tsv")
                 continue
 
+            if subject_ids is not None and pid not in subject_ids:
+                continue
+
             label = labels[pid]
 
             for slice_file in sorted(os.listdir(subject_path)):
                 if slice_file.endswith(".png"):
+                    if not include_augmented and "_aug" in slice_file:
+                        continue
                     self.samples.append((
                         os.path.join(subject_path, slice_file),
                         label,

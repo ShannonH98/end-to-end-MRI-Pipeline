@@ -27,6 +27,8 @@ class BrainResNet(nn.Module):
         self.model = resnet18(weights="IMAGENET1K_V1")
         for param in self.model.parameters():
             param.requires_grad = False
+        for param in self.model.layer4.parameters():
+            param.requires_grad = True
         self.model.fc = nn.Linear(512, num_classes)
 
     def forward(self, x):
