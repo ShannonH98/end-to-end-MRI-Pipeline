@@ -1,17 +1,17 @@
 import os
 import json
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-from torchvision.models import resnet18
 import torchvision.transforms as transforms
 from PIL import Image
 from collections import defaultdict, Counter
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
 from preprocessing.label_map import load_labels
 from models.cnn import BrainCNN
 from models.BrainResNet import BrainResNet
+from models.BrainRadImageNet import BrainRadImageNet
 
 # Config
 SLICES = "data/slices"
@@ -19,22 +19,22 @@ TSV = "data/participants.tsv"
 EPOCHS = 10
 BATCH_SIZE = 32
 LEARNING_RATE = 0.0001
+N_FOLDS = 5
 SEED = 42
 CLASS_NAMES = ["HC", "AVH-", "AVH+"]
+RADIMAGENET_WEIGHTS = "models/RadImageNet_resnet50.pt"
 
-# --- Subject-level split ---
 labels = load_labels(TSV)
 all_subjects = list(labels.keys())
 all_groups = [labels[s] for s in all_subjects]
 
-train_subs, temp_subs, train_groups, temp_groups = train_test_split(
-    all_subjects, all_groups, test_size=0.3, random_state=SEED, stratify=all_groups
-)
-val_subs, test_subs = train_test_split(
-    temp_subs, test_size=0.5, random_state=SEED, stratify=temp_groups
-)
+use_radimagenet = os.path.exists(RADIMAGENET_WEIGHTS)
+if not use_radimagenet:
+    print("RadImageNet weights not found — skipping RadImageNet model.")
+    print(f"Download weights and save to: {RADIMAGENET_WEIGHTS}")
 
-print(f"Subjects — train: {len(train_subs)}, val: {len(val_subs)}, test: {len(test_subs)}")
+print(f"Total subjects: {len(all_subjects)} | Running {N_FOLDS}-fold cross-validation")
+
 
 class BrainDataset(Dataset):
     def __init__(self, slices_folder, tsv_path, image_size, grayscale_channels, subject_ids, include_augmented):
@@ -59,11 +59,21 @@ class BrainDataset(Dataset):
             pid = "sub-" + subject.split("-")[1].split("_")[0]
             if pid not in labels or pid not in subject_ids:
                 continue
+
+            orig_slices = sorted([f for f in os.listdir(subject_path) if f.endswith(".png") and "_aug" not in f])
+            n = len(orig_slices)
+            start, end = int(0.25 * n), int(0.75 * n)
+            selected = set(orig_slices[start:end])
+
             for slice_file in sorted(os.listdir(subject_path)):
-                if slice_file.endswith(".png"):
-                    if not include_augmented and "_aug" in slice_file:
-                        continue
-                    self.samples.append((os.path.join(subject_path, slice_file), labels[pid], pid))
+                if not slice_file.endswith(".png"):
+                    continue
+                if not include_augmented and "_aug" in slice_file:
+                    continue
+                base = slice_file.split("_aug")[0] + ".png" if "_aug" in slice_file else slice_file
+                if base not in selected:
+                    continue
+                self.samples.append((os.path.join(subject_path, slice_file), labels[pid], pid))
 
     def __len__(self):
         return len(self.samples)
@@ -75,14 +85,12 @@ class BrainDataset(Dataset):
         return img, label, subject_id
 
 
-def make_loaders(image_size, grayscale_channels):
+def make_loaders(train_subs, test_subs, image_size, grayscale_channels):
     train_ds = BrainDataset(SLICES, TSV, image_size, grayscale_channels, set(train_subs), include_augmented=True)
-    val_ds   = BrainDataset(SLICES, TSV, image_size, grayscale_channels, set(val_subs),   include_augmented=False)
     test_ds  = BrainDataset(SLICES, TSV, image_size, grayscale_channels, set(test_subs),  include_augmented=False)
-    print(f"  Train slices: {len(train_ds)} | Val: {len(val_ds)} | Test: {len(test_ds)}")
+    print(f"  Train slices: {len(train_ds)} | Test: {len(test_ds)}")
     return (
         DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True),
-        DataLoader(val_ds,   batch_size=BATCH_SIZE),
         DataLoader(test_ds,  batch_size=BATCH_SIZE),
     )
 
@@ -104,9 +112,8 @@ def evaluate(model, loader):
     return all_labels, all_preds, acc
 
 
-def train_model(model, train_loader, val_loader, optimizer, name):
-    criterion = nn.CrossEntropyLoss()
-    history = {"loss": [], "val_accuracy": []}
+def train_model(model, train_loader, test_loader, optimizer, name, class_weights=None):
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
     for epoch in range(EPOCHS):
         model.train()
         total_loss = 0
@@ -117,55 +124,107 @@ def train_model(model, train_loader, val_loader, optimizer, name):
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        _, _, acc = evaluate(model, val_loader)
-        history["loss"].append(total_loss)
-        history["val_accuracy"].append(acc)
-        print(f"  [{name}] Epoch {epoch+1}/{EPOCHS} | Loss: {total_loss:.4f} | Val Acc: {acc:.2f}%")
-    return history
+        _, _, acc = evaluate(model, test_loader)
+        print(f"  [{name}] Epoch {epoch+1}/{EPOCHS} | Loss: {total_loss:.4f} | Test Acc: {acc:.2f}%")
 
 
-# --- CNN ---
-print("\n=== Training BrainCNN ===")
-cnn_train_loader, cnn_val_loader, cnn_test_loader = make_loaders(128, 1)
-cnn_model = BrainCNN()
-cnn_optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
-cnn_history = train_model(cnn_model, cnn_train_loader, cnn_val_loader, cnn_optimizer, "CNN")
-cnn_val_labels, cnn_val_preds, _ = evaluate(cnn_model, cnn_val_loader)
-cnn_test_labels, cnn_test_preds, cnn_test_acc = evaluate(cnn_model, cnn_test_loader)
+# --- K-Fold Cross-Validation ---
+kfold = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=SEED)
 
-# --- ResNet ---
-print("\n=== Training BrainResNet ===")
-resnet_train_loader, resnet_val_loader, resnet_test_loader = make_loaders(224, 3)
-resnet_model = BrainResNet()
-resnet_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, resnet_model.parameters()), lr=LEARNING_RATE)
-resnet_history = train_model(resnet_model, resnet_train_loader, resnet_val_loader, resnet_optimizer, "ResNet")
-resnet_val_labels, resnet_val_preds, _ = evaluate(resnet_model, resnet_val_loader)
-resnet_test_labels, resnet_test_preds, resnet_test_acc = evaluate(resnet_model, resnet_test_loader)
+cnn_fold_accs       = []
+resnet_fold_accs    = []
+radimagenet_fold_accs = []
+cnn_fold_results       = []
+resnet_fold_results    = []
+radimagenet_fold_results = []
 
-# --- Comparison ---
-print("\n" + "="*55)
-print("MODEL COMPARISON (subject-level, no data leakage)")
-print("="*55)
-print(f"\n{'Metric':<20} {'BrainCNN':>15} {'BrainResNet':>15}")
-print("-"*55)
-print(f"{'Best Val Acc':<20} {max(cnn_history['val_accuracy']):>14.2f}% {max(resnet_history['val_accuracy']):>14.2f}%")
-print(f"{'Test Acc':<20} {cnn_test_acc:>14.2f}% {resnet_test_acc:>14.2f}%")
+for fold, (train_idx, test_idx) in enumerate(kfold.split(all_subjects, all_groups)):
+    train_subs = [all_subjects[i] for i in train_idx]
+    test_subs  = [all_subjects[i] for i in test_idx]
 
-print("\n--- BrainCNN test report ---")
-print(classification_report(cnn_test_labels, cnn_test_preds, target_names=CLASS_NAMES))
-print("--- BrainResNet test report ---")
-print(classification_report(resnet_test_labels, resnet_test_preds, target_names=CLASS_NAMES))
+    print(f"\n{'='*55}")
+    print(f"FOLD {fold+1}/{N_FOLDS} — Train: {len(train_subs)} subjects | Test: {len(test_subs)} subjects")
+    print(f"{'='*55}")
+
+    # Class weights from training fold
+    fold_counts = Counter([all_groups[i] for i in train_idx])
+    class_weights = torch.tensor(
+        [len(train_subs) / (3 * fold_counts[c]) for c in range(3)], dtype=torch.float
+    )
+    print(f"  Class weights: HC={class_weights[0]:.2f}, AVH-={class_weights[1]:.2f}, AVH+={class_weights[2]:.2f}")
+
+    # --- CNN ---
+    print("\n--- BrainCNN ---")
+    cnn_train_loader, cnn_test_loader = make_loaders(train_subs, test_subs, 128, 1)
+    cnn_model = BrainCNN()
+    cnn_optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
+    train_model(cnn_model, cnn_train_loader, cnn_test_loader, cnn_optimizer, "CNN", class_weights)
+    cnn_labels, cnn_preds, cnn_acc = evaluate(cnn_model, cnn_test_loader)
+    cnn_fold_accs.append(cnn_acc)
+    cnn_fold_results.append({"fold": fold+1, "test_labels": cnn_labels, "test_preds": cnn_preds, "acc": cnn_acc})
+    print(f"  CNN Fold {fold+1} Test Acc: {cnn_acc:.2f}%")
+
+    # --- ResNet ---
+    print("\n--- BrainResNet ---")
+    resnet_train_loader, resnet_test_loader = make_loaders(train_subs, test_subs, 224, 3)
+    resnet_model = BrainResNet()
+    resnet_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, resnet_model.parameters()), lr=LEARNING_RATE)
+    train_model(resnet_model, resnet_train_loader, resnet_test_loader, resnet_optimizer, "ResNet", class_weights)
+    resnet_labels, resnet_preds, resnet_acc = evaluate(resnet_model, resnet_test_loader)
+    resnet_fold_accs.append(resnet_acc)
+    resnet_fold_results.append({"fold": fold+1, "test_labels": resnet_labels, "test_preds": resnet_preds, "acc": resnet_acc})
+    print(f"  ResNet Fold {fold+1} Test Acc: {resnet_acc:.2f}%")
+
+    # --- RadImageNet ---
+    if use_radimagenet:
+        print("\n--- BrainRadImageNet ---")
+        rad_train_loader, rad_test_loader = make_loaders(train_subs, test_subs, 224, 3)
+        rad_model = BrainRadImageNet(weights_path=RADIMAGENET_WEIGHTS)
+        rad_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, rad_model.parameters()), lr=LEARNING_RATE)
+        train_model(rad_model, rad_train_loader, rad_test_loader, rad_optimizer, "RadImageNet", class_weights)
+        rad_labels, rad_preds, rad_acc = evaluate(rad_model, rad_test_loader)
+        radimagenet_fold_accs.append(rad_acc)
+        radimagenet_fold_results.append({"fold": fold+1, "test_labels": rad_labels, "test_preds": rad_preds, "acc": rad_acc})
+        print(f"  RadImageNet Fold {fold+1} Test Acc: {rad_acc:.2f}%")
+
+# --- Summary ---
+print("\n" + "="*65)
+print("K-FOLD SUMMARY (subject-level majority vote)")
+print("="*65)
+header = f"\n{'Fold':<20} {'BrainCNN':>14} {'BrainResNet':>14}"
+if use_radimagenet:
+    header += f" {'RadImageNet':>14}"
+print(header)
+print("-"*65)
+for i, (ca, ra) in enumerate(zip(cnn_fold_accs, resnet_fold_accs)):
+    row = f"  Fold {i+1:<15} {ca:>13.2f}% {ra:>13.2f}%"
+    if use_radimagenet:
+        row += f" {radimagenet_fold_accs[i]:>13.2f}%"
+    print(row)
+print("-"*65)
+mean_row = f"{'Mean Accuracy':<20} {np.mean(cnn_fold_accs):>13.2f}% {np.mean(resnet_fold_accs):>13.2f}%"
+std_row  = f"{'Std Dev':<20} {np.std(cnn_fold_accs):>13.2f}% {np.std(resnet_fold_accs):>13.2f}%"
+if use_radimagenet:
+    mean_row += f" {np.mean(radimagenet_fold_accs):>13.2f}%"
+    std_row  += f" {np.std(radimagenet_fold_accs):>13.2f}%"
+print(mean_row)
+print(std_row)
+print(f"{'Chance baseline':<20} {'33.33%':>14} {'33.33%':>14}")
 
 # --- Save ---
 results = {
-    "seed": SEED, "epochs": EPOCHS,
-    "subjects": {"train": train_subs, "val": val_subs, "test": test_subs},
-    "cnn": {"history": cnn_history, "test_labels": cnn_test_labels, "test_preds": cnn_test_preds},
-    "resnet": {"history": resnet_history, "test_labels": resnet_test_labels, "test_preds": resnet_test_preds}
+    "n_folds": N_FOLDS, "epochs": EPOCHS, "seed": SEED,
+    "cnn":    {"fold_accs": cnn_fold_accs,    "mean": np.mean(cnn_fold_accs),    "std": np.std(cnn_fold_accs),    "folds": cnn_fold_results},
+    "resnet": {"fold_accs": resnet_fold_accs, "mean": np.mean(resnet_fold_accs), "std": np.std(resnet_fold_accs), "folds": resnet_fold_results},
 }
-with open("models/comparison_results.json", "w") as f:
+if use_radimagenet:
+    results["radimagenet"] = {
+        "fold_accs": radimagenet_fold_accs,
+        "mean": np.mean(radimagenet_fold_accs),
+        "std": np.std(radimagenet_fold_accs),
+        "folds": radimagenet_fold_results,
+    }
+with open("models/kfold_results.json", "w") as f:
     json.dump(results, f, indent=2)
 
-torch.save(cnn_model.state_dict(), "models/brain_cnn.pth")
-torch.save(resnet_model.state_dict(), "models/brain_resnet.pth")
-print("\nResults saved → models/comparison_results.json")
+print("\nResults saved → models/kfold_results.json")

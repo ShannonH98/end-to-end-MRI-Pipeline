@@ -10,6 +10,7 @@ from PIL import Image
 from collections import defaultdict, Counter
 from sklearn.metrics import classification_report
 import csv
+from sklearn.model_selection import KFold, cross_val_score
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from preprocessing.label_map import load_labels
