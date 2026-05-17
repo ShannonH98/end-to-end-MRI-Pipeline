@@ -3,84 +3,82 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
 
-RESULTS = "models/comparison_results.json"
+RESULTS = "models/kfold_results.json"
 CLASS_NAMES = ["HC", "AVH-", "AVH+"]
 
 with open(RESULTS) as f:
     r = json.load(f)
 
-cnn_hist     = r["cnn"]["history"]
-resnet_hist  = r["resnet"]["history"]
-cnn_test_labels   = r["cnn"]["test_labels"]
-cnn_test_preds    = r["cnn"]["test_preds"]
-resnet_test_labels = r["resnet"]["test_labels"]
-resnet_test_preds  = r["resnet"]["test_preds"]
+n_folds = r["n_folds"]
+folds = list(range(1, n_folds + 1))
 
-cnn_test_acc    = 100 * sum(p == l for p, l in zip(cnn_test_preds, cnn_test_labels)) / len(cnn_test_labels)
-resnet_test_acc = 100 * sum(p == l for p, l in zip(resnet_test_preds, resnet_test_labels)) / len(resnet_test_labels)
+cnn_fold_accs    = r["cnn"]["fold_accs"]
+resnet_fold_accs = r["resnet"]["fold_accs"]
+cnn_mean,    cnn_std    = r["cnn"]["mean"],    r["cnn"]["std"]
+resnet_mean, resnet_std = r["resnet"]["mean"], r["resnet"]["std"]
 
-epochs = list(range(1, len(cnn_hist["loss"]) + 1))
+# Aggregate labels/preds across all folds for confusion matrices
+cnn_all_labels    = [l for fold in r["cnn"]["folds"]    for l in fold["test_labels"]]
+cnn_all_preds     = [p for fold in r["cnn"]["folds"]    for p in fold["test_preds"]]
+resnet_all_labels = [l for fold in r["resnet"]["folds"] for l in fold["test_labels"]]
+resnet_all_preds  = [p for fold in r["resnet"]["folds"] for p in fold["test_preds"]]
 
-# --- 1. Loss curves ---
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(epochs, cnn_hist["loss"],    marker="o", label="BrainCNN",    color="steelblue")
-ax.plot(epochs, resnet_hist["loss"], marker="s", label="BrainResNet", color="darkorange")
-ax.set_title("Training Loss per Epoch")
-ax.set_xlabel("Epoch")
-ax.set_ylabel("Loss")
-ax.legend()
-ax.grid(True)
-plt.tight_layout()
-plt.savefig("models/comparison_loss.png", dpi=150)
-plt.show()
-print("Saved: models/comparison_loss.png")
+# --- 1. Per-fold accuracy bar chart ---
+x = np.arange(n_folds)
+width = 0.35
 
-# --- 2. Val accuracy curves ---
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(epochs, cnn_hist["val_accuracy"],    marker="o", label="BrainCNN",    color="steelblue")
-ax.plot(epochs, resnet_hist["val_accuracy"], marker="s", label="BrainResNet", color="darkorange")
-ax.axhline(y=33.33, color="gray", linestyle="--", linewidth=1, label="Chance (33%)")
-ax.set_title("Validation Accuracy per Epoch (Subject-Level)")
-ax.set_xlabel("Epoch")
+fig, ax = plt.subplots(figsize=(9, 5))
+bars1 = ax.bar(x - width/2, cnn_fold_accs,    width, label="BrainCNN",    color="steelblue",  alpha=0.85)
+bars2 = ax.bar(x + width/2, resnet_fold_accs, width, label="BrainResNet", color="darkorange", alpha=0.85)
+ax.axhline(y=33.33,       color="gray",     linestyle="--", linewidth=1, label="Chance (33%)")
+ax.axhline(y=cnn_mean,    color="steelblue",  linestyle=":",  linewidth=1.5, label=f"CNN mean ({cnn_mean:.1f}%)")
+ax.axhline(y=resnet_mean, color="darkorange", linestyle=":",  linewidth=1.5, label=f"ResNet mean ({resnet_mean:.1f}%)")
+ax.set_title("Per-Fold Test Accuracy (Subject-Level, 5-Fold CV)")
+ax.set_xlabel("Fold")
 ax.set_ylabel("Accuracy (%)")
+ax.set_xticks(x)
+ax.set_xticklabels([f"Fold {i}" for i in folds])
 ax.set_ylim(0, 100)
 ax.legend()
-ax.grid(True)
+ax.grid(axis="y", alpha=0.4)
 plt.tight_layout()
-plt.savefig("models/comparison_val_accuracy.png", dpi=150)
+plt.savefig("models/kfold_accuracy.png", dpi=150)
 plt.show()
-print("Saved: models/comparison_val_accuracy.png")
+print("Saved: models/kfold_accuracy.png")
 
-# --- 3. Test confusion matrices ---
+# --- 2. Aggregated confusion matrices ---
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-for ax, labels, preds, title in [
-    (axes[0], cnn_test_labels,    cnn_test_preds,    f"BrainCNN  ({cnn_test_acc:.1f}% test)"),
-    (axes[1], resnet_test_labels, resnet_test_preds, f"BrainResNet  ({resnet_test_acc:.1f}% test)"),
+for ax, labels, preds, name, mean in [
+    (axes[0], cnn_all_labels,    cnn_all_preds,    "BrainCNN",    cnn_mean),
+    (axes[1], resnet_all_labels, resnet_all_preds, "BrainResNet", resnet_mean),
 ]:
     cm = confusion_matrix(labels, preds, labels=[0, 1, 2])
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=CLASS_NAMES)
     disp.plot(ax=ax, cmap="Blues", colorbar=False)
-    ax.set_title(title)
+    ax.set_title(f"{name}  (mean {mean:.1f}%)")
 
-plt.suptitle("Test Set Confusion Matrices (Subject-Level)", fontsize=13)
+plt.suptitle("Aggregated Confusion Matrices — All Folds (Subject-Level)", fontsize=13)
 plt.tight_layout()
-plt.savefig("models/comparison_confusion_matrices.png", dpi=150)
+plt.savefig("models/kfold_confusion_matrices.png", dpi=150)
 plt.show()
-print("Saved: models/comparison_confusion_matrices.png")
+print("Saved: models/kfold_confusion_matrices.png")
 
-# --- 4. Summary table ---
-print("\n" + "=" * 55)
-print("MODEL COMPARISON (subject-level, no data leakage)")
-print("=" * 55)
-print(f"\n{'Metric':<22} {'BrainCNN':>14} {'BrainResNet':>14}")
-print("-" * 55)
-print(f"{'Best Val Acc':<22} {max(cnn_hist['val_accuracy']):>13.2f}% {max(resnet_hist['val_accuracy']):>13.2f}%")
-print(f"{'Test Acc':<22} {cnn_test_acc:>13.2f}% {resnet_test_acc:>13.2f}%")
+# --- 3. Summary table ---
+print("\n" + "=" * 58)
+print("K-FOLD SUMMARY (5-fold, subject-level majority vote)")
+print("=" * 58)
+print(f"\n{'Fold':<22} {'BrainCNN':>14} {'BrainResNet':>14}")
+print("-" * 58)
+for i, (ca, ra) in enumerate(zip(cnn_fold_accs, resnet_fold_accs)):
+    print(f"  Fold {i+1:<17} {ca:>13.2f}% {ra:>13.2f}%")
+print("-" * 58)
+print(f"{'Mean Accuracy':<22} {cnn_mean:>13.2f}% {resnet_mean:>13.2f}%")
+print(f"{'Std Dev':<22} {cnn_std:>13.2f}% {resnet_std:>13.2f}%")
 print(f"{'Chance baseline':<22} {'33.33%':>14} {'33.33%':>14}")
 
-print("\n--- BrainCNN test report ---")
-print(classification_report(cnn_test_labels, cnn_test_preds, target_names=CLASS_NAMES, zero_division=0))
+print("\n--- BrainCNN aggregated report ---")
+print(classification_report(cnn_all_labels, cnn_all_preds, target_names=CLASS_NAMES, zero_division=0))
 
-print("--- BrainResNet test report ---")
-print(classification_report(resnet_test_labels, resnet_test_preds, target_names=CLASS_NAMES, zero_division=0))
+print("--- BrainResNet aggregated report ---")
+print(classification_report(resnet_all_labels, resnet_all_preds, target_names=CLASS_NAMES, zero_division=0))
