@@ -5,7 +5,7 @@ from torchvision.models import resnet50
 
 
 class BrainRadImageNet(nn.Module):
-    def __init__(self, weights_path="models/RadImageNet_resnet50.pt", num_classes=3):
+    def __init__(self, weights_path="models/resnet50_torch.pt", num_classes=3):
         super().__init__()
         self.model = resnet50(weights=None)
 

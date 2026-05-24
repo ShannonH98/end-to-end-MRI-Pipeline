@@ -22,7 +22,7 @@ LEARNING_RATE = 0.0001
 N_FOLDS = 5
 SEED = 42
 CLASS_NAMES = ["HC", "AVH-", "AVH+"]
-RADIMAGENET_WEIGHTS = "models/RadImageNet_resnet50.pt"
+RADIMAGENET_WEIGHTS = "models/resnet50_torch.pt"
 
 labels = load_labels(TSV)
 all_subjects = list(labels.keys())
@@ -114,6 +114,7 @@ def evaluate(model, loader):
 
 def train_model(model, train_loader, test_loader, optimizer, name, class_weights=None):
     criterion = nn.CrossEntropyLoss(weight=class_weights)
+    history = {"loss": [], "accuracy": []}
     for epoch in range(EPOCHS):
         model.train()
         total_loss = 0
@@ -125,7 +126,10 @@ def train_model(model, train_loader, test_loader, optimizer, name, class_weights
             optimizer.step()
             total_loss += loss.item()
         _, _, acc = evaluate(model, test_loader)
+        history["loss"].append(total_loss)
+        history["accuracy"].append(acc)
         print(f"  [{name}] Epoch {epoch+1}/{EPOCHS} | Loss: {total_loss:.4f} | Test Acc: {acc:.2f}%")
+    return history
 
 
 # --- K-Fold Cross-Validation ---
@@ -158,10 +162,10 @@ for fold, (train_idx, test_idx) in enumerate(kfold.split(all_subjects, all_group
     cnn_train_loader, cnn_test_loader = make_loaders(train_subs, test_subs, 128, 1)
     cnn_model = BrainCNN()
     cnn_optimizer = torch.optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE)
-    train_model(cnn_model, cnn_train_loader, cnn_test_loader, cnn_optimizer, "CNN", class_weights)
+    cnn_history = train_model(cnn_model, cnn_train_loader, cnn_test_loader, cnn_optimizer, "CNN", class_weights)
     cnn_labels, cnn_preds, cnn_acc = evaluate(cnn_model, cnn_test_loader)
     cnn_fold_accs.append(cnn_acc)
-    cnn_fold_results.append({"fold": fold+1, "test_labels": cnn_labels, "test_preds": cnn_preds, "acc": cnn_acc})
+    cnn_fold_results.append({"fold": fold+1, "test_labels": cnn_labels, "test_preds": cnn_preds, "acc": cnn_acc, "history": cnn_history})
     print(f"  CNN Fold {fold+1} Test Acc: {cnn_acc:.2f}%")
 
     # --- ResNet ---
@@ -169,10 +173,10 @@ for fold, (train_idx, test_idx) in enumerate(kfold.split(all_subjects, all_group
     resnet_train_loader, resnet_test_loader = make_loaders(train_subs, test_subs, 224, 3)
     resnet_model = BrainResNet()
     resnet_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, resnet_model.parameters()), lr=LEARNING_RATE)
-    train_model(resnet_model, resnet_train_loader, resnet_test_loader, resnet_optimizer, "ResNet", class_weights)
+    resnet_history = train_model(resnet_model, resnet_train_loader, resnet_test_loader, resnet_optimizer, "ResNet", class_weights)
     resnet_labels, resnet_preds, resnet_acc = evaluate(resnet_model, resnet_test_loader)
     resnet_fold_accs.append(resnet_acc)
-    resnet_fold_results.append({"fold": fold+1, "test_labels": resnet_labels, "test_preds": resnet_preds, "acc": resnet_acc})
+    resnet_fold_results.append({"fold": fold+1, "test_labels": resnet_labels, "test_preds": resnet_preds, "acc": resnet_acc, "history": resnet_history})
     print(f"  ResNet Fold {fold+1} Test Acc: {resnet_acc:.2f}%")
 
     # --- RadImageNet ---
@@ -181,10 +185,10 @@ for fold, (train_idx, test_idx) in enumerate(kfold.split(all_subjects, all_group
         rad_train_loader, rad_test_loader = make_loaders(train_subs, test_subs, 224, 3)
         rad_model = BrainRadImageNet(weights_path=RADIMAGENET_WEIGHTS)
         rad_optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, rad_model.parameters()), lr=LEARNING_RATE)
-        train_model(rad_model, rad_train_loader, rad_test_loader, rad_optimizer, "RadImageNet", class_weights)
+        rad_history = train_model(rad_model, rad_train_loader, rad_test_loader, rad_optimizer, "RadImageNet", class_weights)
         rad_labels, rad_preds, rad_acc = evaluate(rad_model, rad_test_loader)
         radimagenet_fold_accs.append(rad_acc)
-        radimagenet_fold_results.append({"fold": fold+1, "test_labels": rad_labels, "test_preds": rad_preds, "acc": rad_acc})
+        radimagenet_fold_results.append({"fold": fold+1, "test_labels": rad_labels, "test_preds": rad_preds, "acc": rad_acc, "history": rad_history})
         print(f"  RadImageNet Fold {fold+1} Test Acc: {rad_acc:.2f}%")
 
 # --- Summary ---
