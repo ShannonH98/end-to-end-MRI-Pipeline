@@ -1,0 +1,60 @@
+
+######################################################################
+# EXPERIMENT: BINARY  (2 classes — Non Demented=0, Very Mild+Mild+Moderate=1)
+######################################################################
+OASIS subjects loaded: 347
+  Non Demented: 266 subjects
+  Demented: 81 subjects
+
+Running 5-fold cross-validation
+
+
+============================================================
+FOLD 1/5 — Train: 277 subjects | Test: 70 subjects
+============================================================
+
+  Fold 1 subject counts:
+    Non Demented           train=213 subjects | test= 53 subjects
+    Demented               train= 64 subjects | test= 17 subjects
+
+  Class weights: ['0.65', '2.16']
+
+--- OasisCNN ---
+  Train slices: 34664 | Test slices: 8577
+  [OasisCNN] Epoch 1/10 | Loss: 506.0215 | Test Acc: 84.29%
+  [OasisCNN] Epoch 2/10 | Loss: 382.0448 | Test Acc: 85.71%
+  [OasisCNN] Epoch 3/10 | Loss: 319.5042 | Test Acc: 85.71%
+  [OasisCNN] Epoch 4/10 | Loss: 267.7408 | Test Acc: 84.29%
+  [OasisCNN] Epoch 5/10 | Loss: 229.7577 | Test Acc: 85.71%
+  [OasisCNN] Epoch 6/10 | Loss: 186.9509 | Test Acc: 77.14%
+  [OasisCNN] Epoch 7/10 | Loss: 161.8575 | Test Acc: 84.29%
+  [OasisCNN] Epoch 8/10 | Loss: 145.6743 | Test Acc: 85.71%
+  [OasisCNN] Epoch 9/10 | Loss: 123.8004 | Test Acc: 82.86%
+  [OasisCNN] Epoch 10/10 | Loss: 108.5238 | Test Acc: 84.29%
+  Fold 1 Test Acc: 84.29%
+
+--- BrainResNet (OASIS) ---
+  Train slices: 34664 | Test slices: 8577
+  [ResNet] Epoch 1/10 | Loss: 307.5637 | Test Acc: 88.57%
+  [ResNet] Epoch 2/10 | Loss: 152.1759 | Test Acc: 87.14%
+  [ResNet] Epoch 3/10 | Loss: 100.0151 | Test Acc: 84.29%
+  [ResNet] Epoch 4/10 | Loss: 67.7218 | Test Acc: 85.71%
+  [ResNet] Epoch 5/10 | Loss: 55.8831 | Test Acc: 87.14%
+  [ResNet] Epoch 6/10 | Loss: 47.6055 | Test Acc: 81.43%
+  [ResNet] Epoch 7/10 | Loss: 40.3607 | Test Acc: 84.29%
+  [ResNet] Epoch 8/10 | Loss: 37.7357 | Test Acc: 87.14%
+  [ResNet] Epoch 9/10 | Loss: 34.3984 | Test Acc: 84.29%
+  [ResNet] Epoch 10/10 | Loss: 27.4739 | Test Acc: 84.29%
+  Fold 1 Test Acc: 84.29%
+
+--- BrainRadImageNet (OASIS) ---
+  Train slices: 34664 | Test slices: 8577
+  Loaded RadImageNet weights from models/resnet50_torch.pt
+  [RadImageNet] Epoch 1/10 | Loss: 656.3626 | Test Acc: 52.86%
+  [RadImageNet] Epoch 2/10 | Loss: 570.8540 | Test Acc: 80.00%
+  [RadImageNet] Epoch 3/10 | Loss: 541.9885 | Test Acc: 78.57%
+  [RadImageNet] Epoch 4/10 | Loss: 515.6595 | Test Acc: 85.71%
+  [RadImageNet] Epoch 5/10 | Loss: 494.8766 | Test Acc: 80.00%
+  [RadImageNet] Epoch 6/10 | Loss: 476.5094 | Test Acc: 80.00%
+  [RadImageNet] Epoch 7/10 | Loss: 454.4998 | Test Acc: 81.43%
+  [RadImageNet] Epoch 8/10 | Loss: 437.8632 | Test Acc: 81.43%
